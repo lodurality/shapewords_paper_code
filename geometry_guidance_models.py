@@ -123,7 +123,7 @@ class Attention(nn.Module):
                     nn.init.uniform_(layer.bias, a=-1e-6, b=1e-6)
 
 
-class CLIPGeometryGuide(nn.Module):
+class Shape2CLIP(nn.Module):
     def __init__(
             self,
             *,
