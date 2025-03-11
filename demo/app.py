@@ -50,7 +50,7 @@ import open_clip
 import gdown
 import argparse
 import random
-
+import spaces
 
 class ShapeWordsDemo:
     # Constants
@@ -461,7 +461,7 @@ class ShapeWordsDemo:
         return fin_guidance, prompt_emb
 
     # For ZeroGPU compatibility, uncomment this decorator when using ZeroGPU
-    # @spaces.GPU(duration=120)
+    @spaces.GPU(duration=120)
     def generate_images(self, prompt, category, selected_shape_idx, guidance_strength, seed):
         # Clear status text immediately
         status = ""
@@ -504,9 +504,9 @@ class ShapeWordsDemo:
         
         try:
             # For ZeroGPU, move models to GPU if not already there
-            # if hasattr(spaces, 'GPU'):
-            #     self.pipeline = self.pipeline.to(device)
-            #     self.shape2clip_model = self.shape2clip_model.to(device)
+            if hasattr(spaces, 'GPU'):
+             self.pipeline = self.pipeline.to(device)
+             self.shape2clip_model = self.shape2clip_model.to(device)
             
             # Generate base image (without guidance)
             with torch.no_grad():
@@ -565,10 +565,10 @@ class ShapeWordsDemo:
             status = f"<div style='padding: 10px; background-color: #e8f5e9; border-left: 5px solid #4caf50; margin-bottom: 10px;'>✓ Successfully generated images using Shape #{selected_shape_idx} from category '{category}'.</div>"
             
             # For ZeroGPU, optionally move models back to CPU to free resources
-            # if hasattr(spaces, 'GPU'):
-            #     self.pipeline = self.pipeline.to('cpu')
-            #     self.shape2clip_model = self.shape2clip_model.to('cpu')
-            #     torch.cuda.empty_cache()
+            if hasattr(spaces, 'GPU'):
+                self.pipeline = self.pipeline.to('cpu')
+                self.shape2clip_model = self.shape2clip_model.to('cpu')
+                torch.cuda.empty_cache()
                 
         except Exception as e:
             print(f"Error generating guided image: {e}")
