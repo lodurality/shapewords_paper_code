@@ -46,7 +46,6 @@ import gradio as gr
 from PIL import Image, ImageFont, ImageDraw
 from diffusers.utils import load_image
 from diffusers import DPMSolverMultistepScheduler, StableDiffusionPipeline
-import open_clip
 import gdown
 import argparse
 import random
@@ -142,16 +141,10 @@ class ShapeWordsDemo:
             algorithm_type="sde-dpmsolver++"
         )
         
-        # Load CLIP model
-        clip_model, _, preprocess = open_clip.create_model_and_transforms(
-            'ViT-H-14', 
-            pretrained='laion2b_s32b_b79k'
-        )
-        
-        # Move models to device if not using ZeroGPU
+        # Move model to device
         if device.type == "cuda":
             self.pipeline = self.pipeline.to(device)
-            self.pipeline.enable_model_cpu_offload()
+            #self.pipeline.enable_model_cpu_offload()
         
         clip_tokenizer = open_clip.get_tokenizer('ViT-H-14')
         self.text_encoder = self.pipeline.text_encoder
@@ -160,7 +153,9 @@ class ShapeWordsDemo:
         # Look for Shape2CLIP checkpoint in multiple locations
         checkpoint_paths = [
             "projection_model-0920192.pth",
-            "embeddings/projection_model-0920192.pth"
+            "embeddings/projection_model-0920192.pth",
+            "/data/projection_model-0920192.pth",
+            "/data/embeddings/projection_model-0920192.pth"
         ]
         
         checkpoint_found = False
@@ -198,7 +193,8 @@ class ShapeWordsDemo:
                 f"pointbert_shapenet_{cat_id}.npz",
                 f"{cat_id}_pb_embs.npz",
                 f"embeddings/pointbert_shapenet_{cat_id}.npz",
-                f"embeddings/{cat_id}_pb_embs.npz"
+                f"embeddings/{cat_id}_pb_embs.npz",
+		 f"/data/shapenet_pointbert_tokens/{cat_id}_pb_embs.npz"
             ]
             
             found_file = None
@@ -251,7 +247,8 @@ class ShapeWordsDemo:
             f"pointbert_shapenet_{cat_id}.npz",           
             f"{cat_id}_pb_embs.npz",                      
             f"embeddings/pointbert_shapenet_{cat_id}.npz", 
-            f"embeddings/{cat_id}_pb_embs.npz",           
+            f"embeddings/{cat_id}_pb_embs.npz",   
+            f"/data/shapenet_pointbert_tokens/{cat_id}_pb_embs.npz"        
         ]
         
         # Find the first existing file
@@ -423,6 +420,7 @@ class ShapeWordsDemo:
         
         return new_slider, current_idx, preview_image, counter_text
 
+    @spaces.GPU(duration=45)
     def get_guidance(self, test_prompt, category_name, guidance_emb):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         prompt_tokens = torch.LongTensor(self.tokenizer.encode(test_prompt, padding='max_length')).to(device)
@@ -460,8 +458,7 @@ class ShapeWordsDemo:
 
         return fin_guidance, prompt_emb
 
-    # For ZeroGPU compatibility, uncomment this decorator when using ZeroGPU
-    @spaces.GPU(duration=120)
+    @spaces.GPU(duration=45)
     def generate_images(self, prompt, category, selected_shape_idx, guidance_strength, seed):
         # Clear status text immediately
         status = ""
@@ -504,9 +501,9 @@ class ShapeWordsDemo:
         
         try:
             # For ZeroGPU, move models to GPU if not already there
-            if hasattr(spaces, 'GPU'):
-             self.pipeline = self.pipeline.to(device)
-             self.shape2clip_model = self.shape2clip_model.to(device)
+            #if hasattr(spaces, 'GPU'):
+            # self.pipeline = self.pipeline.to(device)
+            # self.shape2clip_model = self.shape2clip_model.to(device)
             
             # Generate base image (without guidance)
             with torch.no_grad():
@@ -565,10 +562,10 @@ class ShapeWordsDemo:
             status = f"<div style='padding: 10px; background-color: #e8f5e9; border-left: 5px solid #4caf50; margin-bottom: 10px;'>✓ Successfully generated images using Shape #{selected_shape_idx} from category '{category}'.</div>"
             
             # For ZeroGPU, optionally move models back to CPU to free resources
-            if hasattr(spaces, 'GPU'):
-                self.pipeline = self.pipeline.to('cpu')
-                self.shape2clip_model = self.shape2clip_model.to('cpu')
-                torch.cuda.empty_cache()
+            #if hasattr(spaces, 'GPU'):
+            #    self.pipeline = self.pipeline.to('cpu')
+            #    self.shape2clip_model = self.shape2clip_model.to('cpu')
+            torch.cuda.empty_cache()
                 
         except Exception as e:
             print(f"Error generating guided image: {e}")
