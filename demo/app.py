@@ -293,7 +293,9 @@ class ShapeWordsDemo:
         # Load point clouds
         try:
             print(f"Loading point clouds from {pc_filename}...")
-            pc_data = np.load(pc_filename, allow_pickle=True)
+
+            pc_data_map = np.load(pc_filename, allow_pickle=False)
+            pc_data = {'ids':pc_data_map['ids'], 'clouds': pc_data_map['clouds']}
 
             # Cache the loaded data
             self.category_point_clouds[category] = pc_data
