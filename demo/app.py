@@ -1023,7 +1023,7 @@ class ShapeWordsDemo:
                     with gr.Column():
                         seed = gr.Slider(
                             minimum=0, maximum=10000, step=1, value=42,
-                            label="4️⃣ Random Seed - Change for different variations"
+                            label="4️⃣ Random Seed - (optional) Change for different variations"
                         )
 
             # Middle section - Shape Selection and Results side by side
