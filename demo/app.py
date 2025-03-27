@@ -77,6 +77,20 @@ class ShapeWordsDemo:
         "microwave": "03761084", "plant": "03991062"
     }
 
+    PREDEFINED_PROMPTS = [
+        'a low poly 3d rendering of a [CATEGORY]',
+        'an aquarelle drawing of a [CATEGORY]',
+        'a photo of a [CATEGORY] on a beach',
+        'a charcoal drawing of a [CATEGORY]',
+        'a Hieronymus Bosch painting of a [CATEGORY]',
+        'a [CATEGORY] under a tree',
+        'A Kazimir Malevich painting of a [CATEGORY]',
+        'a vector graphic of a [CATEGORY]',
+        'a Claude Monet painting of a [CATEGORY]',
+        'a Salvador Dali painting of a [CATEGORY]',
+        'an Art Deco poster of a [CATEGORY]'
+    ]
+
     def __init__(self):
         # Initialize class attributes
         self.pipeline = None
@@ -89,11 +103,9 @@ class ShapeWordsDemo:
         self.shape_thumbnail_cache = {}  # Cache for shape thumbnails
         self.CAT2NAME = {v: k for k, v in self.NAME2CAT.items()}
         self.category_point_clouds = {}
-        self.from_navigation = False
+
         # Initialize all models and data
         self.initialize_models()
-
-
 
     def initialize_models(self):
         # device = DEVICE
@@ -293,9 +305,7 @@ class ShapeWordsDemo:
         # Load point clouds
         try:
             print(f"Loading point clouds from {pc_filename}...")
-
-            pc_data_map = np.load(pc_filename, allow_pickle=False)
-            pc_data = {'ids':pc_data_map['ids'], 'clouds': pc_data_map['clouds']}
+            pc_data = np.load(pc_filename, allow_pickle=True)
 
             # Cache the loaded data
             self.category_point_clouds[category] = pc_data
@@ -475,7 +485,7 @@ class ShapeWordsDemo:
         except Exception as e:
             print(f"Error loading image: {e}")
             return Image.new('RGB', (512, 512), color='gray')
-        
+
     def on_slider_change(self, shape_idx, category):
         """Update the preview when the slider changes"""
         max_idx = self.category_counts.get(category, 0) - 1
@@ -488,119 +498,39 @@ class ShapeWordsDemo:
 
         return shape_preview, counter_text, shape_idx
 
-    def on_slider_change_no_update(self, shape_idx, category):
-        """Handle slider change without updating the plot (used when navigation buttons are clicked)"""
-        if self.from_navigation:
-            self.from_navigation = False
-            # Return the same values without recalculating
-            max_idx = self.category_counts.get(category, 0) - 1
-            return None, f"Shape {shape_idx} of {max_idx}", shape_idx
-        else:
-            # Normal processing when slider is moved directly
-            return self.on_slider_change(shape_idx, category)
-
-    def prev_shape(self, current_idx, category):
+    def prev_shape(self, current_idx):
         """Go to previous shape"""
-        max_idx = self.category_counts.get(category, 0) - 1
         new_idx = max(0, current_idx - 1)
-
-        # Get preview image
-        preview_image = self.get_shape_preview(category, new_idx)
-
-        # Update counter text
-        counter_text = f"Shape {new_idx} of {max_idx}"
-
-        # Set a flag to indicate this update came from navigation
-        self.from_navigation = True
-
-        return new_idx, preview_image, counter_text
+        return new_idx
 
     def next_shape(self, current_idx, category):
         """Go to next shape"""
         max_idx = self.category_counts.get(category, 0) - 1
         new_idx = min(max_idx, current_idx + 1)
+        return new_idx
 
-        # Get preview image
-        preview_image = self.get_shape_preview(category, new_idx)
-
-        # Update counter text
-        counter_text = f"Shape {new_idx} of {max_idx}"
-
-        # Set a flag to indicate this update came from navigation
-        self.from_navigation = True
-
-        return new_idx, preview_image, counter_text
-
-    def jump_to_start(self, category):
+    def jump_to_start(self):
         """Jump to the first shape"""
-        max_idx = self.category_counts.get(category, 0) - 1
-        new_idx = 0
-
-        # Get preview image
-        preview_image = self.get_shape_preview(category, new_idx)
-
-        # Update counter text
-        counter_text = f"Shape {new_idx} of {max_idx}"
-
-        # Set a flag to indicate this update came from navigation
-        self.from_navigation = True
-
-        return new_idx, preview_image, counter_text
+        return 0
 
     def jump_to_end(self, category):
         """Jump to the last shape"""
         max_idx = self.category_counts.get(category, 0) - 1
-        new_idx = max_idx
-
-        # Get preview image
-        preview_image = self.get_shape_preview(category, new_idx)
-
-        # Update counter text
-        counter_text = f"Shape {new_idx} of {max_idx}"
-
-        # Set a flag to indicate this update came from navigation
-        self.from_navigation = True
-
-        return new_idx, preview_image, counter_text
+        return max_idx
 
     def random_shape(self, category):
         """Select a random shape from the category"""
         max_idx = self.category_counts.get(category, 0) - 1
         if max_idx <= 0:
-            return 0, self.get_shape_preview(category, 0), f"Shape 0 of 0"
-
+            return 0
         # Generate random index
         random_idx = random.randint(0, max_idx)
-
-        # Get preview image
-        preview_image = self.get_shape_preview(category, random_idx)
-
-        # Update counter text
-        counter_text = f"Shape {random_idx} of {max_idx}"
-
-        # Set a flag to indicate this update came from navigation
-        self.from_navigation = True
-
-        return random_idx, preview_image, counter_text
+        return random_idx
 
     def random_prompt(self):
         """Select a random prompt from the predefined list"""
-        prompts = [
-            'a low poly 3d rendering of a [CATEGORY]',
-            'an aquarelle drawing of a [CATEGORY]',
-            'a photo of a [CATEGORY] on a beach',
-            'a charcoal drawing of a [CATEGORY]',
-            'a Hieronymus Bosch painting of a [CATEGORY]',
-            'a [CATEGORY] under a tree',
-            'A Kazimir Malevich painting of a [CATEGORY]',
-            'a vector graphic of a [CATEGORY]',
-            'a Claude Monet painting of a [CATEGORY]',
-            'a Salvador Dali painting of a [CATEGORY]',
-            'an Art Deco poster of a [CATEGORY]'
-        ]
 
-        # Get a random prompt
-        return random.choice(prompts)
+        return random.choice(self.PREDEFINED_PROMPTS)
 
     def on_category_change(self, category):
         """Update the slider and preview when the category changes"""
@@ -686,13 +616,19 @@ class ShapeWordsDemo:
         else:
             # Fallback if user didn't use placeholder
             final_prompt = f"{prompt} {category}"
-            status = status + f"<div style='padding: 10px; background-color: #f0f7ff; border-left: 5px solid #3498db; margin-bottom: 10px;'>Note: For better results, use [CATEGORY] in your prompt where you want '{category}' to appear, otherwise it is appended at the end of the prompt.</div>"
+            status += self.create_status_message(
+                f"Warning! For better results, use [CATEGORY] in your prompt where you want '{category}' to appear, otherwise it is appended at the end of the prompt.",
+                "info"
+            )
 
         error = False
         # Check if prompt contains any other categories
         for other_category in self.available_categories:
-            if re.search(r'\b' + re.escape(other_category) + r'\b', prompt):
-                status = status + f"<div style='padding: 10px; background-color: #ffebee; border-left: 5px solid #e74c3c; font-weight: bold; margin-bottom: 10px;'>⚠️ ERROR: Your prompt contains '{other_category}'. Please remove it and use [CATEGORY] instead.</div>"
+            if re.search(r'\b' + re.escape(other_category) + r'\b', prompt, re.IGNORECASE):
+                status += self.create_status_message(
+                    f"Error! Your prompt contains '{other_category}'. Please remove it and use [CATEGORY] instead.",
+                    "error"
+                )
                 error = True
         if error:
             return [], status
@@ -700,7 +636,10 @@ class ShapeWordsDemo:
         # Load category embeddings if not already loaded
         pb_dict, all_ids = self.load_category_embeddings(category)
         if pb_dict is None or not all_ids:
-            status = status + f"<div style='padding: 10px; background-color: #ffebee; border-left: 5px solid #e74c3c; font-weight: bold; margin-bottom: 10px;'>⚠️ ERROR: Failed to load embeddings for {category}</div>"
+            status += self.create_status_message(
+                f"Error! Unable to load embeddings for {category}",
+                "error"
+            )
             return [], status
 
         # Ensure shape index is valid
@@ -727,10 +666,13 @@ class ShapeWordsDemo:
                     guidance_scale=7.5
                 ).images
 
-            results.append(base_images[0])
+            results.append((base_images[0], "Unguided Result"))
         except Exception as e:
             print(f"Error generating base image: {e}")
-            status = status + f"<div style='padding: 10px; background-color: #ffebee; border-left: 5px solid #e74c3c; font-weight: bold; margin-bottom: 10px;'>⚠️ ERROR: Error generating base image: {str(e)}</div>"
+            status += self.create_status_message(
+                f"Error! Unable to generate base image: {str(e)}",
+                "error"
+            )
             return results, status
 
         try:
@@ -739,7 +681,10 @@ class ShapeWordsDemo:
             out_guidance, prompt_emb = self.get_guidance(final_prompt, category, pb_emb)
         except Exception as e:
             print(f"Error generating guidance: {e}")
-            status = status + f"<div style='padding: 10px; background-color: #ffebee; border-left: 5px solid #e74c3c; font-weight: bold; margin-bottom: 10px;'>⚠️ ERROR: Error generating guidance: {str(e)}</div>"
+            status += self.create_status_message(
+                f"Error! Unable to generate guidance: {str(e)}",
+                "error"
+            )
             return results, status
 
         try:
@@ -754,18 +699,84 @@ class ShapeWordsDemo:
                     guidance_scale=7.5
                 ).images
 
-            results.append(guided_images[0])
+            results.append((guided_images[0], f"Guided Result (λ = {guidance_strength})"))
 
             # Success status
-            status = status + f"<div style='padding: 10px; background-color: #e8f5e9; border-left: 5px solid #4caf50; margin-bottom: 10px;'>✓ Successfully generated images using Shape #{selected_shape_idx} from category '{category}'.</div>"
+            status += self.create_status_message(
+                f"Success! Generated image guided by Shape #{selected_shape_idx} from category '{category}'.",
+                "success"
+            )
 
             torch.cuda.empty_cache()
 
         except Exception as e:
             print(f"Error generating guided image: {e}")
-            status = status + f"<div style='padding: 10px; background-color: #ffebee; border-left: 5px solid #e74c3c; font-weight: bold; margin-bottom: 10px;'>⚠️ ERROR: Error generating guided image: {str(e)}</div>"
+            status += self.create_status_message(
+                f"Error! Unable to generate guided image: {str(e)}",
+                "error"
+            )
+            return results, status
 
         return results, status
+
+    def create_status_message(self, content, type_="info"):
+        # Define styles for different message types
+        styles = {
+            "info": {
+                "bg": "rgba(33, 150, 243, 0.15)",
+                "border": "#2196F3",
+                "icon": "ℹ️",
+                "title": "NOTE: "
+            },
+            "error": {
+                "bg": "rgba(244, 67, 54, 0.15)",
+                "border": "#F44336",
+                "icon": "❌",
+                "title": "ERROR: "
+            },
+            "success": {
+                "bg": "rgba(76, 175, 80, 0.15)",
+                "border": "#4CAF50",
+                "icon": "✅",
+                "title": "SUCCESS: "
+            },
+            "waiting": {
+                "bg": "rgba(255, 193, 7, 1)",
+                "border": "#FFC107",
+                "icon": "⏳",
+                "title": "PROCESSING: "
+            }
+        }
+
+        style = styles.get(type_, styles["info"])
+
+        font_weight = "bold" if type_ == "waiting" else "normal"
+        animation_style = "animation: pulse 1.5s infinite;" if type_ == "waiting" else ""
+
+        return f"""
+        <div style='
+            padding: 12px; 
+            background-color: {style["bg"]}; 
+            border-left: 5px solid {style["border"]}; 
+            margin-bottom: 12px;
+            border-radius: 4px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            font-weight: {font_weight};
+            {animation_style}
+        '>
+            <style>
+            @keyframes pulse {{
+                0%, 100% {{ opacity: 1; }}
+                50% {{ opacity: 0.7; }}
+            }}
+            </style>
+            <div style='font-size: 18px; line-height: 1.2;'>{style["icon"]}</div>
+            <div>{content}</div>
+        </div>
+        """
 
     def on_demo_load(self):
         """Function to ensure initial image is loaded when demo starts"""
@@ -788,15 +799,43 @@ class ShapeWordsDemo:
                       /* Base styles */
                       .container { max-width: 1400px; margin: 0 auto; }
 
-                      /* Typography */
+                      /* Title headers */
                       .title { text-align: center; font-size: 26px; font-weight: 600; margin-bottom: 3px; }
                       .subtitle { text-align: center; font-size: 16px; margin-bottom: 3px; }
                       .authors { text-align: center; font-size: 15px; margin-bottom: 3px; }
-                      .affiliations { text-align: center; font-size: 13px; margin-bottom: 5px; }
+                      .affiliations { text-align: center; font-size: 13px; margin-bottom: 3px; }
+                      
+                      /* Instructions Accordion */
+                      button.instructions-accordion > span,
+                      .instructions-accordion button > span {
+                          font-size: 17px !important;
+                          font-weight: 600 !important;
+                      }
+                        
+                      .instructions-accordion + div p,
+                      .instructions-accordion + div li,
+                      .instructions-text p,
+                      .instructions-text li {
+                          font-size: 14px !important;
+                      }
+                        
+                      /* Section Headers */
+                      .step-header,.settings-header { 
+                          font-size: 18px; 
+                          font-weight: 600; 
+                          margin-top: 5px;
+                          margin-bottom: 5px;
+                      }
 
-                      /* Buttons */
+                      .sub-header {
+                          margin-top: 5px;
+                          margin-bottom: 5px;
+                          padding-left: 5px;
+                      }
+
+                      /* Buttons for project page, paper, code etc*/
                       .buttons-container { margin: 0 auto 10px; }
-                      .buttons-row { display: flex; justify-content: center; gap: 10px; }
+                      .buttons-row { display: flex; justify-content: center; gap: 10px; flex-wrap: nowrap; }
                       .nav-button {
                           display: inline-block;
                           padding: 6px 12px;
@@ -808,6 +847,7 @@ class ShapeWordsDemo:
                           font-size: 14px;
                           transition: background-color 0.2s;
                           text-align: center;
+                          white-space: nowrap;
                       }
                       .nav-button:hover { background-color: #505050; }
                       .nav-button.disabled { 
@@ -815,9 +855,16 @@ class ShapeWordsDemo:
                           cursor: not-allowed;
                       }
 
-                      /* Form elements */
-                      .prompt-text { font-size: 16px; }
-                      .instruction-text { font-size: 15px; padding: 10px; border-radius: 8px; background-color: rgba(255, 165, 0, 0.1); }
+                      /* Prompt design section elements */
+                      .category-dropdown .wrap { font-size: 16px; }
+                      .prompt-input { flex-grow: 1; }
+                      .prompt-button { 
+                            align-self: center;  /* Vertical centering */
+                            margin-left: auto;   /* Horizontal centering */
+                            margin-right: auto;
+                            display: block;      /* Makes margins work for centering */
+                      }
+                      /* Shape selection section elements */
                       .shape-navigation { 
                           display: flex; 
                           justify-content: center; 
@@ -833,18 +880,20 @@ class ShapeWordsDemo:
                           padding: 6px 10px; 
                       }
                       .nav-icon-btn { font-size: 18px; }
-                      .category-dropdown .wrap { font-size: 16px; }
-                      .generate-button { font-size: 18px !important; padding: 12px !important; margin: 15px 0 !important; }
-                      .slider-label { font-size: 16px; }
-                      .slider-text { font-size: 14px; margin-top: 5px; }
+                      /* Generate button */
+                      .generate-button { 
+                          font-size: 18px !important; 
+                          padding: 12px !important; 
+                          margin: 15px 0 !important; 
+                          background: linear-gradient(135deg, #f97316, #fb923c) !important;
+                      }
+                      /* Results section elements */
+                      .results-gallery { min-height: 100px; max-height: 500px; display: flex; align-items: center; justify-content: center; }
+                      .results-gallery .grid-container { display: flex; align-items: center; }
+                      /* About section elements */
                       .about-section { font-size: 16px; margin-top: 40px; padding: 20px; border-top: 1px solid rgba(128, 128, 128, 0.2); }
-                      .status-message { background-color: rgba(0, 128, 0, 0.1); color: #006400; padding: 10px; border-radius: 4px; margin-top: 10px; }
-                      .prompt-container { display: flex; align-items: center; }
-                      .prompt-input { flex-grow: 1; }
-                      .prompt-button { margin-left: 10px; align-self: center; }
-                      .results-gallery { min-height: 100px; max-height: 500px; }
-
-                      /* Responsive adjustments */
+                    
+                      /* Responsive adjustments for mobile mode*/
                       @media (max-width: 768px) {
                           .shape-navigation { 
                               max-width: 100%;
@@ -856,14 +905,15 @@ class ShapeWordsDemo:
                               font-size: 16px;
                           }
                           .buttons-row {
-                              flex-wrap: wrap;
+                              gap: 5px;
                           }
                           .nav-button {
-                              margin-bottom: 5px;
+                              padding: 5px 8px;
+                              font-size: 13px;
                           }
                           .results-gallery {
                               max-height: 320px;
-                          }
+                          } 
                       }
 
                       /* Dark mode overrides */
@@ -873,7 +923,7 @@ class ShapeWordsDemo:
                           }
                           .nav-button:hover {
                               background-color: #666666;
-                          }
+                          }  
                       }
                       """) as demo:
             # Header with title and links
@@ -911,16 +961,33 @@ class ShapeWordsDemo:
                 with gr.Column(scale=3):
                     pass  # Empty space for alignment
 
+            # Add instructions
+
+            with gr.Accordion("📋 Instructions", open=False, elem_classes="instructions-accordion"):
+                gr.Markdown("""
+                1️⃣ Select an shape category from the dropdown menu -- overall 55 categories. We recommend trying chair (default), car, lamp and bottle categories.
+
+                2️⃣ Create a text prompt using **[CATEGORY]** as a placeholder or use **"Random prompt"** button to select from a small set of pre-defined prompts
+
+                3️⃣ Adjust **guidance strength** to control shape influence. Use the default 0.9 value for best balance between prompt and shape adherence. Value of 0.0 corresponds to unguided result that is based just on input prompt.
+
+                4️⃣ (optional) Choose **random seed**. For a fixed combination of input prompt and random seed, unguided image will always be the same.
+                
+                5️⃣ Choose **guidance 3D shape** using the slider, navigation or random shape buttons. Shapes come from ShapeNet dataset (~55K shapes across all categories)
+
+                6️⃣ Click **Generate Images** button at the bottom to create images that follow both your text prompt and the selected 3D shape geometry
+                """, elem_classes="instructions-text")
+
             # Hidden field to store selected shape index
             selected_shape_idx = gr.Number(value=0, visible=False)
 
             # Prompt Design (full width)
             with gr.Group():
-                gr.Markdown("### 📝 Prompt Design")
+                gr.Markdown("### 📝 Prompt Design", elem_classes="step-header")
 
                 with gr.Row():
                     category = gr.Dropdown(
-                        label="Object Category",
+                        label="1️⃣ Shape Category",
                         choices=self.available_categories,
                         value=default_category,
                         container=True,
@@ -929,7 +996,7 @@ class ShapeWordsDemo:
                     )
 
                     prompt = gr.Textbox(
-                        label="Prompt",
+                        label="2️⃣ Text Prompt - Use [CATEGORY] as a placeholder, e.g. 'a [CATEGORY] under a tree'",
                         placeholder="an aquarelle drawing of a [CATEGORY]",
                         value="an aquarelle drawing of a [CATEGORY]",
                         lines=1,
@@ -942,30 +1009,40 @@ class ShapeWordsDemo:
                                                   scale=1,
                                                   elem_classes="prompt-button")
 
-                gr.Markdown("""
-                Use [CATEGORY] in your prompt where you want the selected object type to appear.
-                For example: "a watercolor painting of a [CATEGORY] in the forest"
-                """, elem_classes="instruction-text")
+
+            # Generation Settings (full width)
+            with gr.Group():
+                gr.Markdown("### ⚙️ Generation Settings", elem_classes="settings-header")
+
+                with gr.Row():
+                    with gr.Column():
+                        guidance_strength = gr.Slider(
+                            minimum=0.0, maximum=1.0, step=0.1, value=0.9,
+                            label="3️⃣ Guidance Strength (λ) - Higher λ = stronger shape adherence"
+                        )
+                    with gr.Column():
+                        seed = gr.Slider(
+                            minimum=0, maximum=10000, step=1, value=42,
+                            label="4️⃣ Random Seed - Change for different variations"
+                        )
 
             # Middle section - Shape Selection and Results side by side
-            with gr.Row(equal_height=False):
+            with gr.Row(equal_height=True):
                 # Left column - Shape Selection
                 with gr.Column():
                     with gr.Group():
-                        gr.Markdown("### 🔍 Shape Selection")
+                        gr.Markdown("### 🔍 Shape Selection", elem_classes="step-header")
 
                         shape_slider = gr.Slider(
                             minimum=0,
                             maximum=self.category_counts.get(default_category, 0) - 1,
                             step=1,
                             value=0,
-                            label="Shape Index",
+                            label="5️⃣ Shape Index - Choose a 3D shape to guide image generation",
                             interactive=True
                         )
 
-                        shape_counter = gr.Markdown(f"Shape 0 of {self.category_counts.get(default_category, 0) - 1}")
-
-                        gr.Markdown("### Selected Shape (3D Point Cloud)")
+                        shape_counter = gr.Markdown(f"Shape 0 of {self.category_counts.get(default_category, 0) - 1}", elem_classes="sub-header")
 
                         current_shape_plot = gr.Plot(show_label=False)
 
@@ -980,54 +1057,40 @@ class ShapeWordsDemo:
                 # Right column - Results
                 with gr.Column():
                     with gr.Group():
-                        gr.Markdown("### 🖼️ Generated Results")
+                        gr.Markdown("### 🖼️ Generated Results Preview", elem_classes="step-header")
                         gallery = gr.Gallery(
                             label="Results",
                             show_label=False,
                             elem_id="results_gallery",
                             columns=2,
-                            height="auto",
-                            object_fit="contain",
                             elem_classes="results-gallery"
                         )
 
             # Generate button (full width)
             with gr.Row():
-                run_button = gr.Button("✨ Generate Images", variant="primary", size="lg",
-                                       elem_classes="generate-button")
+                run_button = gr.Button(" 6️⃣ ✨ Generate Images guided by Selected Shape", variant="primary", size="lg",
+                                           elem_classes="generate-button")
 
-            # Generation Settings (full width)
-            with gr.Group():
-                gr.Markdown("### ⚙️ Generation Settings")
-
-                with gr.Row():
-                    with gr.Column():
-                        guidance_strength = gr.Slider(
-                            minimum=0.0, maximum=1.0, step=0.1, value=0.9,
-                            label="Guidance Strength (λ) - Higher λ = stronger shape adherence"
-                        )
-                    with gr.Column():
-                        seed = gr.Slider(
-                            minimum=0, maximum=10000, step=1, value=42,
-                            label="Random Seed"
-                        )
-
+            # Status message (full width)
+            with gr.Row():
                 status_text = gr.HTML("", elem_classes="status-message")
 
             # About section at the bottom of the page
             with gr.Group(elem_classes="about-section"):
                 gr.Markdown("""
-                ## About ShapeWords
+                ### About ShapeWords
 
                 ShapeWords incorporates target 3D shape information with text prompts to guide image synthesis.
 
                 ### How It Works
-                1. Select an object category from the dropdown menu
-                2. Browse through available 3D shapes using the slider or navigation buttons
-                3. Create a text prompt using [CATEGORY] as a placeholder
-                4. Adjust guidance strength to control shape influence
-                5. Click Generate to create images that follow both your text prompt and the selected 3D shape
-
+                
+                1. Select an shape category from the dropdown menu -- overall 55 categories. We recommend trying chair (default), car, lamp and bottle categories.
+                2. Create a text prompt using **[CATEGORY]** as a placeholder or use **"Random prompt"** button to select from a small set of pre-defined prompts
+                3. Adjust **guidance strength** to control shape influence. Use the default 0.9 value for best balance between prompt and shape adherence. Value of 0.0 corresponds to unguided result that is based just on input prompt.
+                4. (optional) Choose **random seed**. For a fixed combination of input prompt and random seed, unguided image will always be the same.
+                5. Choose **guidance 3D shape** using the slider, navigation or random shape buttons. Shapes come from ShapeNet dataset (~55K shapes across all categories)
+                6. Click **Generate Images** button at the bottom to create images that follow both your text prompt and the selected 3D shape geometry
+                
                 ### Citation
                 ```
                 @misc{petrov2024shapewords,
@@ -1041,8 +1104,6 @@ class ShapeWordsDemo:
                 }
                 ```
                 """)
-
-            # Connect components
 
             # Make sure the initial image is loaded when the demo starts
             demo.load(
@@ -1061,36 +1122,36 @@ class ShapeWordsDemo:
             # Previous shape button
             prev_shape_btn.click(
                 fn=self.prev_shape,
-                inputs=[selected_shape_idx, category],
-                outputs=[shape_slider, current_shape_plot, shape_counter]
+                inputs=[selected_shape_idx],
+                outputs=[shape_slider]
             )
 
             # Next shape button
             next_shape_btn.click(
                 fn=self.next_shape,
                 inputs=[selected_shape_idx, category],
-                outputs=[shape_slider, current_shape_plot, shape_counter]
+                outputs=[shape_slider]
             )
 
             # Jump to start button
             jump_start_btn.click(
                 fn=self.jump_to_start,
-                inputs=[category],
-                outputs=[shape_slider, current_shape_plot, shape_counter]
+                inputs=None,
+                outputs=[shape_slider]
             )
 
             # Jump to end button
             jump_end_btn.click(
                 fn=self.jump_to_end,
                 inputs=[category],
-                outputs=[shape_slider, current_shape_plot, shape_counter]
+                outputs=[shape_slider]
             )
 
             # Random shape button
             random_btn.click(
                 fn=self.random_shape,
                 inputs=[category],
-                outputs=[shape_slider, current_shape_plot, shape_counter]
+                outputs=[shape_slider]
             )
 
             # Connect the random prompt button
@@ -1109,34 +1170,19 @@ class ShapeWordsDemo:
 
             # Update status text when generating
             run_button.click(
-                fn=lambda: """<div style='color: #00cc00; background-color: #1a1a1a; 
-                            border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px; 
-                            margin-top: 10px; font-weight: bold;'>
-                            Generating images...</div>""",
+                fn=lambda: self.create_status_message("Generating images...", "waiting"),
                 inputs=None,
                 outputs=[status_text]
             )
 
             # Generate images when button is clicked
             run_button.click(
-                fn=lambda p, c, s_idx, g, seed: [
-                    [
-                        (img, caption) for img, caption in zip(
-                        self.generate_images(p, c, s_idx, g, seed)[0],
-                        [f"Unguided Result", f"Guided Result (λ = {g})"]
-                    )
-                    ],  # Gallery images with captions
-                    f"""<div style="color: #00cc00; background-color: #1a1a1a; 
-                       border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px; 
-                       margin-top: 10px; font-weight: bold;">
-                       ✓ Successfully generated images using Shape #{s_idx} from category '{c}'.</div>"""
-                ],
+                fn=self.generate_images,
                 inputs=[prompt, category, selected_shape_idx, guidance_strength, seed],
                 outputs=[gallery, status_text]
             )
 
         return demo
-
 
 # Main function and entry point
 def main():
