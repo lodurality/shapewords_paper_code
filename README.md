@@ -97,4 +97,4 @@ If you find our work useful, please cite the CVPR 2025 paper:
 
 ## Acknowledgements
 
-The attention implementation in `geometry_guidance_models.py` is based on [3DShape2VecSet](https://github.com/1zb/3DShape2VecSet) by [Biao Zhang](https://1zb.github.io/) and co-authors. The training script is roughly based on the Hugging Face diffusers [textual inversion example](https://huggingface.co/docs/diffusers/en/training/text_inversion). Shape embeddings are produced with PointBERT encoders from [ULIP](https://github.com/salesforce/ULIP).
+The attention implementation in `geometry_guidance_models.py` is based on [3DShape2VecSet](https://github.com/1zb/3DShape2VecSet) by [Biao Zhang](https://1zb.github.io/) and co-authors. The training script is roughly based on the Hugging Face diffusers [textual inversion example](https://huggingface.co/docs/diffusers/en/training/text_inversion). Shape embeddings are produced with PointBERT encoders from [PointBERT](https://github.com/Julie-tang00/Point-BERT).
