@@ -1,0 +1,10 @@
+torch
+diffusers
+transformers
+accelerate
+gradio
+gdown
+plotly
+spaces
+numpy
+Pillow

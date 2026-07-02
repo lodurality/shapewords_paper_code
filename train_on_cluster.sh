@@ -31,7 +31,7 @@ gg_drop_path_rate=0.1
 exp_name=token_guidance_d_${gg_depth}_h_${gg_heads}_drop_${gg_drop_path_rate}_loss_weight_by_t/
 split_path=stats/train_val.txt
 
-accelerate launch --main_process_port $PORT clip_geometry_guidance_main.py \
+accelerate launch --main_process_port $PORT train_geometry_guidance.py \
   --pretrained_model_name_or_path=$MODEL_NAME \
   --categories_path=$categories_path \
   --textured_images_dir=$textured_images_dir \
@@ -42,7 +42,6 @@ accelerate launch --main_process_port $PORT clip_geometry_guidance_main.py \
   --num_train_epochs=100 \
   --learning_rate=5.0e-05 \
   --lr_warmup_steps=1000 \
-  --output_dir="test_guidance" \
   --max_images=10000000 \
   --checkpointing_steps=1000 \
   --dataloader_num_workers=4 \
