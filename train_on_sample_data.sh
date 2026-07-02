@@ -22,7 +22,7 @@ accelerate launch --main_process_port $PORT train_geometry_guidance.py \
   --prompts_path=$prompts_path \
   --train_batch_size=24 \
   --gradient_accumulation_steps=1 \
-  --num_train_epochs=100 \
+  --num_train_epochs=1 \
   --learning_rate=5.0e-05 \
   --lr_warmup_steps=1000 \
   --output_dir="test_guidance" \
