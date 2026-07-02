@@ -25,7 +25,6 @@ accelerate launch --main_process_port $PORT train_geometry_guidance.py \
   --num_train_epochs=1 \
   --learning_rate=5.0e-05 \
   --lr_warmup_steps=1000 \
-  --output_dir="test_guidance" \
   --max_images=10000000 \
   --checkpointing_steps=1000 \
   --dataloader_num_workers=4 \

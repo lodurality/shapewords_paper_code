@@ -52,10 +52,10 @@ import random
 import spaces # for Hugging Face ZeroGPU deployment
 import re
 import plotly.graph_objects as go
-from numpy.lib.user_array import container
 
 # Only for Hugging Face hosting - Add the Hugging Face cache to persistent storage to avoid downloading safetensors every time the demo sleeps and wakes up
-os.environ['HF_HOME'] = '/data/.huggingface'
+if os.path.isdir('/data'):
+    os.environ['HF_HOME'] = '/data/.huggingface'
 
 class ShapeWordsDemo:
     # Constants
